@@ -55,6 +55,10 @@ bool getDopplerMoved() { return (digitalRead(SPEAKER) == HIGH); }
 
 /* Wave left and right limbs randomly. */
 void waveLimbs() {
+  /*
+   * Servo operating tutorial:
+   * https://yehnan.blogspot.com/2013/09/arduinotower-pro-sg90.html
+   */
   limbs.left.elbow.write(random(180));
   limbs.left.shoulder.write(random(180));
   limbs.right.elbow.write(random(180));
