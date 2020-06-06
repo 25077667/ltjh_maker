@@ -1,15 +1,18 @@
 #include "pitches.h" /* Header of speaker */
 #include <Servo.h>   /* Header of SG90 */
 
-#define DOPPLER 15; // input of DOPPLER sensor(RCWL-0516) at PH3
-#define LED 16;     // output the signal of state with LED
+#define ECHO 7
+#define TRIG 6
+#define LED 16 // output the signal of state with LED
+#define LEN 80
+#define RANGE 60
 
 /**
  * Some tutorials about speaker:
- * Demo code: http://learning.cca.tw/MicroControllers/Arduino/ArduinoBuzzer.asp
+ * Demo code: http://learning.cca.tw/MicroControllers/Arduino/ArduinoSPEAKER.asp
  * Arduino man page: https://www.arduino.cc/en/Tutorial/toneKeyboard
  */
-#define SPEAKER 17; // output speaker at PH5 that is digital pin 8
+#define SPEAKER 8 // output speaker at PH5 that is digital pin 8
 
 /* Turn on the LED. */
 #define LED_ON digitalWrite(LED, HIGH)
@@ -17,15 +20,7 @@
 /* Turn off the LED. */
 #define LED_OFF digitalWrite(LED, LOW)
 
-typedef struct _arm {
-  Servo elbow, shoulder;
-} ARM;
-
-typedef struct _limb {
-  ARM left, right;
-} LIMB;
-
-LIMB limbs;
+Servo shoulder;
 
 // notes in the melody:
 int melody[] = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3,
@@ -50,8 +45,20 @@ void playMelody() {
   }
 }
 
-/* Return "true" if senced something moved(in 5~7m). */
-bool getDopplerMoved() { return (digitalRead(SPEAKER) == HIGH); }
+float getDis() {
+  int distance = 0, duration = 0;
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  // Sets the trigPin on HIGH state for 10 micro seconds
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(ECHO, HIGH);
+  // Calculating the distance
+  distance = duration * 0.034 / 2;
+  return distance;
+}
 
 /* Wave left and right limbs randomly. */
 void waveLimbs() {
@@ -59,22 +66,32 @@ void waveLimbs() {
    * Servo operating tutorial:
    * https://yehnan.blogspot.com/2013/09/arduinotower-pro-sg90.html
    */
-  limbs.left.elbow.write(random(180));
-  limbs.left.shoulder.write(random(180));
-  limbs.right.elbow.write(random(180));
-  limbs.right.shoulder.write(random(180));
+  int r = 60;
+  shoulder.write(r);
+  delay(300);
+  shoulder.write(-r);
+  delay(300);
 }
 
 void setup() {
-  pinMode(DOPPLER, INPUT);
+  Serial.begin(9600);
+  pinMode(ECHO, INPUT);
+  pinMode(TRIG, OUTPUT);
   pinMode(LED, OUTPUT);
   pinMode(SPEAKER, OUTPUT);
 
   /* Init Limb */
-  limbs.left.elbow.attach(23);
-  limbs.left.shoulder.attach(24);
-  limbs.right.elbow.attach(25);
-  limbs.right.shoulder.attach(26);
+  shoulder.attach(23);
 }
 
-void loop() {}
+void loop() {
+  // noTone(SPEAKER);
+  float a = getDis();
+  float b = getDis();
+  if (a < LEN && b < LEN) {
+    playMelody();
+    waveLimbs();
+    delay(10);
+  }
+  Serial.println(a);
+}
