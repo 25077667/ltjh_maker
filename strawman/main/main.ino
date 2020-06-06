@@ -1,11 +1,11 @@
 #include "pitches.h" /* Header of speaker */
 #include <Servo.h>   /* Header of SG90 */
 
-#define ECHO 7
-#define TRIG 6
-#define LED 16 // output the signal of state with LED
-#define LEN 80
-#define RANGE 60
+#define ECHO 7                // revceiver of HC-05
+#define TRIG 6                // trigger of HC-05
+#define LED 16                // output the signal of state with LED
+#define DISTANCE_THRESHOLD 80 // lower than 80 cm will do act
+#define ROTATE_RANGE 60       // angle(degree) of shouder rotation
 
 /**
  * Some tutorials about speaker:
@@ -66,10 +66,9 @@ void waveLimbs() {
    * Servo operating tutorial:
    * https://yehnan.blogspot.com/2013/09/arduinotower-pro-sg90.html
    */
-  int r = 60;
-  shoulder.write(r);
+  shoulder.write(ROTATE_RANGE);
   delay(300);
-  shoulder.write(-r);
+  shoulder.write(-ROTATE_RANGE);
   delay(300);
 }
 
@@ -85,13 +84,15 @@ void setup() {
 }
 
 void loop() {
-  // noTone(SPEAKER);
   float a = getDis();
   float b = getDis();
-  if (a < LEN && b < LEN) {
+
+  // Because there might have some noice,
+  // double check(a and b) will reduce the margin error
+  if (a < DISTANCE_THRESHOLD && b < DISTANCE_THRESHOLD) {
     playMelody();
     waveLimbs();
     delay(10);
   }
-  Serial.println(a);
+  Serial.println((a + b) / 2);
 }
